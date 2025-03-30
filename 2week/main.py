@@ -16,62 +16,80 @@ def read_csv_file(file_path):
 
 def convert_to_list(file_path):
     inventory = []
-    with open(file_path, mode='r', encoding='utf-8') as file:
-        reader = csv.reader(file)
-        header = next(reader)  # 헤더 저장
-        for row in reader:
-            if len(row) != len(header):
-                continue  # 컬럼 수 안 맞으면 건너뜀
+    try:
+        with open(file_path, mode='r', encoding='utf-8') as file:
+            lines = file.readlines()
+
+        header = lines[0].strip().split(',')
+        flammability_index = header.index('Flammability')
+
+        for line in lines[1:]:
+            row = line.strip().split(',')
+            row[flammability_index] = float(row[flammability_index])
+
             inventory.append(row)
-    return header, inventory
+
+        return header, inventory
+    except Exception as e:
+        print(f'Error: CSV 변환 중 오류 발생 - {e}')
+        return [], []
 
 
 def sort_by_flammability(header, inventory):
-    try:
-        index = header.index('Flammability')
-    except ValueError:
-        print("Error: 'Flammability' 컬럼을 찾을 수 없습니다.")
-        return inventory
+    index = header.index('Flammability')
+    # # 인화성 값을 float으로 변환해서 정렬
+    # def get_flammability(row):
+    #     try:
+    #         return float(row[index])
+    #     except ValueError:
+    #         return -1  # 숫자로 변환 불가능한 값은 가장 낮게 취급
 
-    # 인화성 값을 float으로 변환해서 정렬
-    def get_flammability(row):
-        try:
-            return float(row[index])
-        except ValueError:
-            return -1  # 숫자로 변환 불가능한 값은 가장 낮게 취급
-
-    return sorted(inventory, key=get_flammability, reverse=True)
+    return sorted(inventory, key=lambda x: x[index], reverse=True)
 
 
 def save_as_binary(file_path, data):
     try:
         with open(file_path, mode='wb') as file:
-            pickle.dump(data, file)
+            for row in data:
+                # 리스트를 문자열로 바꾸고 줄바꿈 추가
+                line = ','.join(map(str, row)) + '\n'
+                # 문자열을 바이트로 인코딩해서 저장
+                file.write(line.encode('utf-8'))
     except Exception as e:
         print(f'Error: 파일 저장 중 오류 발생 - {e}')
 
 
 def read_binary_file(file_path):
+    data = []
     try:
         with open(file_path, mode='rb') as file:
-            return pickle.load(file)
+            for line in file:
+                # 바이너리 → 문자열 디코딩
+                decoded = line.decode('utf-8').strip()
+                row = decoded.split(',')
+
+                # 마지막 값이 숫자(Flammability)라고 가정하고 float으로 변환
+                try:
+                    row[-1] = float(row[-1])
+                except ValueError:
+                    row[-1] = -1.0  # 변환 실패 시 기본값
+                data.append(row)
+
+        return data
     except FileNotFoundError:
         print(f'Error: {file_path} 파일을 찾을 수 없습니다.')
     except Exception as e:
         print(f'Error: 파일을 읽는 중 오류 발생 - {e}')
+        return []
 
 
 def filter_dangerous_items(header, inventory, threshold=0.7):
-    try:
-        index = header.index("Flammability")
-    except ValueError:
-        print("Error: 'Flammability' 컬럼을 찾을 수 없습니다.")
-        return []
-
+    index = header.index("Flammability")
     filtered = []
+
     for row in inventory:
         try:
-            if float(row[index]) >= threshold:
+            if row[index] >= threshold:
                 filtered.append(row)
         except ValueError:
             continue  # 숫자로 변환 불가능한 값은 무시
