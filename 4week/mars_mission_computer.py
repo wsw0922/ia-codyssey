@@ -14,10 +14,13 @@ class DummySensor:
         }
 
     def set_env(self):
-        self.env_values['mars_base_internal_temperature'] = random.uniform(18, 30)
-        self.env_values['mars_base_external_temperature'] = random.uniform(0, 21)
+        self.env_values['mars_base_internal_temperature'] = random.uniform(
+            18, 30)
+        self.env_values['mars_base_external_temperature'] = random.uniform(
+            0, 21)
         self.env_values['mars_base_internal_humidity'] = random.uniform(50, 60)
-        self.env_values['mars_base_external_illuminance'] = random.uniform(500, 715)
+        self.env_values['mars_base_external_illuminance'] = random.uniform(
+            500, 715)
         self.env_values['mars_base_internal_co2'] = random.uniform(0.02, 0.1)
         self.env_values['mars_base_internal_oxygen'] = random.uniform(4, 7)
 
@@ -43,11 +46,6 @@ class MissionComputer:
         count = 0
 
         while True:
-            # 특정 키(S/s 등) 입력 시 종료
-            user_input = input("Press 's' to stop or just press Enter to continue: ")
-            if user_input.lower() == 's':
-                print('System stoped....')
-                break
 
             # 1. 센서값 갱신 후 가져오기
             sensor.set_env()
